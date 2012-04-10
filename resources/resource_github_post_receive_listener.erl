@@ -55,4 +55,7 @@ finish_request(ReqData, Context) ->
     Context1 = ?WM_REQ(ReqData, Context),
     ContextQs = z_context:ensure_qs(Context1),
     [_|_] = z_context:get_q("payload", ContextQs),
-    {true, ReqData, Context}.
+    AdminContext = z_acl:sudo(Context1),
+    Tag = {vcs_up, [{site, z_context:site(Context1)}]},
+    ResContext = mod_zotonic_status_vcs:event(#postback{message=Tag}, AdminContext),
+    {true, ReqData, ResContext}.
