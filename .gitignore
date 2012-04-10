@@ -1,0 +1,11 @@
+/.idea/
+/.idea_modules/
+/config
+/files/backup/
+/files/preview/
+/files/dropbox/
+/files/processing/
+/files/unhandled/
+.empty
+.emtpty
+*~
