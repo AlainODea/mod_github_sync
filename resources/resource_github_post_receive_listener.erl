@@ -27,7 +27,6 @@
 -export([service_available/2,
          allowed_methods/2,
          resource_exists/2,
-         process_post/2,
          finish_request/2]).
 
 -include_lib("webmachine_resource.hrl").
@@ -47,7 +46,7 @@ allowed_methods(ReqData, Context) ->
 
 resource_exists(ReqData, Context) ->
     % play dead to hide from hackers
-    ?WM_REPLY(false, Context1).
+    ?WM_REPLY(false, Context).
 
 finish_request(ReqData, Context) ->
     % Do the actual processing after response to avoid slow 404
