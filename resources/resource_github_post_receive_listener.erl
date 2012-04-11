@@ -40,21 +40,55 @@ service_available(ReqData, DispatchArgs) when is_list(DispatchArgs) ->
     Context1 = z_context:set(DispatchArgs, Context),
     ?WM_REPLY(true, Context1).
 
-%% only POST requests are valid for Post-Receive Hooks
+%% only POST requests are valid for PayPal IPN
 allowed_methods(ReqData, Context) ->
     {['POST'], ReqData, Context}.
 
 resource_exists(ReqData, Context) ->
-    % play dead to hide from hackers
-    ?WM_REPLY(false, Context).
+    {true, ReqData, Context}.
 
 finish_request(ReqData, Context) ->
-    % Do the actual processing after response to avoid slow 404
-    % which makes the ruse kind of obvious to keen hackers
-    Context1 = ?WM_REQ(ReqData, Context),
-    ContextQs = z_context:ensure_qs(Context1),
-    [_|_] = z_context:get_q("payload", ContextQs),
-    AdminContext = z_acl:sudo(Context1),
-    Tag = {vcs_up, [{site, z_context:site(Context1)}]},
-    ResContext = mod_zotonic_status_vcs:event(#postback{message=Tag}, AdminContext),
-    {true, ReqData, ResContext}.
+    {true, ReqData, update(Context)}.
+
+%% Internal API
+update(Context) ->
+    Site = z_context:site(Context),
+    run(update_command(vcs_root(Site))),
+    Context.
+
+run(ok) ->
+    ok;
+run(Command) ->
+    spawn(fun() ->
+        os:cmd(lists:flatten(Command)),
+        z:m()
+    end).
+
+update_command({hg, Path}) ->
+    ["(cd \"", Path, "\"; hg pull -u)"];
+update_command({git, Path}) ->
+    ["(cd \"", Path, "\"; git pull)"];
+update_command(undefined) ->
+    ok.
+
+%% Code robbed and tuned from mod_zotonic_status_vcs, needs refactor
+vcs_root(Site) ->
+    vcs_root_dir(site_path(Site)).
+
+vcs_root_dir(Dir) ->
+    HgDir = filename:join([Dir, ".hg"]),
+    hg_root(filelib:is_dir(HgDir), Dir).
+
+hg_root(true, Dir) ->
+    {hg, Dir};
+hg_root(false, Dir) ->
+    GitDir = filename:join([Dir, ".git"]),
+    git_root(filelib:is_dir(GitDir), Dir).
+
+git_root(true, Dir) ->
+    {git, Dir};
+git_root(false, _) ->
+    undefined.
+
+site_path(Site) ->
+    filename:join([z_utils:lib_dir(priv), "sites", Site]).
