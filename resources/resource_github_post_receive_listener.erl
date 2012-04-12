@@ -45,19 +45,41 @@ allowed_methods(ReqData, Context) ->
     {['POST'], ReqData, Context}.
 
 resource_exists(ReqData, Context) ->
-    validate(ReqData, Context, m_config:get_value(mod_github_sync, accepted_ips, Context)).
+    validate_ip(ReqData, Context, m_config:get_value(mod_github_sync, accepted_ips, Context)).
 
-validate(ReqData, Context, undefined) ->
-    {true, ReqData, Context};
-validate(ReqData, Context, AcceptedIPs) when is_binary(AcceptedIPs) ->
-    validate(ReqData, Context, binary_to_list(AcceptedIPs));
-validate(ReqData, Context, AcceptedIPs) ->
+validate_ip(ReqData, Context, undefined) ->
+    validate_token(ReqData, Context, m_config:get_value(mod_github_sync, accepted_tokens, Context));
+validate_ip(ReqData, Context, AcceptedIPs) when is_binary(AcceptedIPs) ->
+    validate_ip(ReqData, Context, binary_to_list(AcceptedIPs));
+validate_ip(ReqData, Context, AcceptedIPs) ->
     check_ip(ReqData, Context, string:str(AcceptedIPs, wrq:peer(ReqData))).
 
 check_ip(ReqData, Context, 0) ->
     {false, ReqData, Context};
 check_ip(ReqData, Context, _) ->
+    validate_token(ReqData, Context, m_config:get_value(mod_github_sync, accepted_token, Context)).
+
+validate_token(ReqData, Context, undefined) ->
+    {true, ReqData, Context};
+validate_token(ReqData, Context, AcceptedToken) when is_binary(AcceptedToken) ->
+    validate_token(ReqData, Context, binary_to_list(AcceptedToken));
+validate_token(ReqData, Context, AcceptedToken) ->
+    check_token(ReqData, Context, AcceptedToken =:= token(Context, ReqData)).
+
+check_token(ReqData, Context, false) ->
+    {false, ReqData, Context};
+check_token(ReqData, Context, true) ->
     {true, ReqData, Context}.
+
+token(Context, ReqData) ->
+    Context1 = z_context:set_reqdata(ReqData, Context),
+    ContextQs = z_context:ensure_qs(Context1),
+    get_token(ContextQs, z_context:get(token, ContextQs)).
+
+get_token(ContextQs, undefined) ->
+    z_context:get_q("token", ContextQs);
+get_token(_ContextQs, Token) ->
+    Token.
 
 process_post(ReqData, Context) ->
     {true, ReqData, update(Context)}.

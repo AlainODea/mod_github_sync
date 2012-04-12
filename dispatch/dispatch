@@ -14,5 +14,6 @@
 
 %% Dispatch rules for mod_github_sync
 [
-    {github_post_receive_listener,  ["github-post-receive"], resource_github_post_receive_listener, []}
+    {github_post_receive_listener,  ["github-post-receive"], resource_github_post_receive_listener, []},
+    {github_post_receive_listener,  ["github-post-receive", token], resource_github_post_receive_listener, []}
 ].
