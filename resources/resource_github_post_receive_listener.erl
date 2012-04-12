@@ -27,7 +27,7 @@
 -export([service_available/2,
          allowed_methods/2,
          resource_exists/2,
-         finish_request/2]).
+         process_post/2]).
 
 -include_lib("webmachine_resource.hrl").
 -include_lib("zotonic.hrl").
@@ -45,9 +45,21 @@ allowed_methods(ReqData, Context) ->
     {['POST'], ReqData, Context}.
 
 resource_exists(ReqData, Context) ->
+    validate(ReqData, Context, m_config:get_value(mod_github_sync, accepted_ips, Context)).
+
+validate(ReqData, Context, undefined) ->
+    {true, ReqData, Context};
+validate(ReqData, Context, AcceptedIPs) when is_binary(AcceptedIPs) ->
+    validate(ReqData, Context, binary_to_list(AcceptedIPs));
+validate(ReqData, Context, AcceptedIPs) ->
+    check_ip(ReqData, Context, string:str(AcceptedIPs, wrq:peer(ReqData))).
+
+check_ip(ReqData, Context, 0) ->
+    {false, ReqData, Context};
+check_ip(ReqData, Context, _) ->
     {true, ReqData, Context}.
 
-finish_request(ReqData, Context) ->
+process_post(ReqData, Context) ->
     {true, ReqData, update(Context)}.
 
 %% Internal API
