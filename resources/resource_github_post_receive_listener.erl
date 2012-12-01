@@ -1,13 +1,10 @@
 %% @author Alain O'Dea <alain.odea@gmail.com>
-%% @copyright 2012 Alain O'Dea
 %% @date 2012-04-09
 %% @doc Webmachine-based Github Post-Receive Hook
 %% The role of the resource_github_post_receive_listener is to receive POSTs
 %% from Github and trigger a pull and rebuild of site code
 %% @end
 
-%% Copyright 2012 Alain O'Dea
-%%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
 %% You may obtain a copy of the License at
